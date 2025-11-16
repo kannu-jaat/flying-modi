@@ -2,71 +2,560 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Windows 11 Web OS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Text Share 🔄</title>
+
 <style>
 body {
-  font-family: Arial, sans-serif;
-  background: #0e1116;
-  color: white;
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: url("https://i.postimg.cc/05DzmwBz/uwp4801312.jpg") center/cover no-repeat;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* LOGIN SCREEN */
+#loginScreen {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(15px);
+  background: rgba(0,0,0,0.45);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  z-index: 1000;
 }
-textarea, input {
-  width: 80%;
-  margin: 8px;
+
+.loginBox {
+  background: rgba(255,255,255,0.1);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.4);
+  width: 320px;
+  color: white;
+  text-align: center;
+}
+
+.loginBox input {
+  width: 100%;
   padding: 10px;
+  margin: 8px 0;
   border-radius: 8px;
   border: none;
+  outline: none;
 }
-button {
-  padding: 10px 20px;
+
+.loginBox button {
+  width: 100%;
+  padding: 10px;
+  background: #2962ff;
   border: none;
   border-radius: 8px;
-  background: #00c896;
   color: white;
   font-size: 16px;
+  cursor: pointer;
 }
-#result { margin-top: 15px; }
+
+#homeScreen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+}
+
+.appIcon {
+  width: 90px;
+  text-align: center;
+  color: white;
+  margin: 10px;
+  cursor: pointer;
+  float: left;
+}
+
+.appIcon img {
+  width: 55px;
+  height: 55px;
+}
+
+/* WINDOWS */
+.window {
+  position: absolute;
+  width: 550px;
+  height: 380px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  overflow: hidden;
+  z-index: 50; 
+}
+
+.windowHeader {
+  background: #e0e0e0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  justify-content: space-between;
+  cursor: move;
+}
+
+/* --- CONTROL BUTTON STYLES --- */
+.windowHeader .controls button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  width: 35px; 
+  height: 38px;
+  margin-left: 5px; 
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: #333;
+}
+
+/* Minimize/Maximize Buttons (Pink) */
+.windowHeader .min,
+.windowHeader .max {
+    background: #ffb6c1; 
+    color: #000;
+}
+.windowHeader .min:hover,
+.windowHeader .max:hover {
+    background: #ff69b4; 
+    color: white;
+}
+
+/* Refresh Button (Weak Red/Light Red) */
+.windowHeader .refresh {
+    background: #f08080;
+    color: #333;
+}
+.windowHeader .refresh:hover {
+    background: #cd5c5c;
+}
+
+/* Close Button (Red) */
+.windowHeader .close {
+  background: #ff0000;
+  color: white;
+  font-weight: bold;
+}
+.windowHeader .close:hover {
+  background: #cc0000;
+}
+/* ------------------------------------- */
+
+.window iframe {
+  width: 100%;
+  height: calc(100% - 40px);
+  border: none;
+}
+
+/* TASKBAR */
+#taskbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Taskbar items को दोनों कोनों पर धकेलने के लिए */
+  padding: 0 10px;
+  z-index: 90; 
+}
+
+#taskbarCenter {
+    display: flex;
+    align-items: center;
+    /* Center taskbar items */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 100%;
+}
+
+.taskIcon {
+  height: 40px;
+  border-radius: 8px;
+  margin: 0 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.taskIcon:hover {
+    background: rgba(255,255,255,0.8);
+}
+
+.taskIcon img {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
+
+/* Clock Container */
+#taskbarClock {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 0 10px;
+    font-size: 12px;
+    color: white;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
+}
+
+/* --- CUSTOM CONFIRMATION MODAL STYLES --- */
+#customModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    z-index: 1000; 
+}
+
+.modalContent {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    border-top: 5px solid #0078d4;
+}
+
+#modalMessage {
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.modalButtons button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#modalYes {
+    background: #0078d4;
+    color: white;
+}
+
+#modalNo {
+    background: #f0f0f0;
+    color: #333;
+}
+/* ------------------------------------------ */
 </style>
 </head>
+
 <body>
 
-<h2>📩 Text Share</h2>
+<div id="customModal">
+    <div class="modalContent">
+        <p id="modalMessage">Are you sure?</p>
+        <div class="modalButtons">
+            <button id="modalYes">Yes</button>
+            <button id="modalNo">No</button>
+        </div>
+    </div>
+</div>
 
-<textarea id="sendText" placeholder="Type your message..."></textarea><br>
-<button onclick="sendMessage()">Send & Get Code</button>
+<div id="loginScreen">
+  <div class="loginBox">
+    <h2>Welcome</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg"></p>
+  </div>
+</div>
 
-<hr style="width:80%;margin:20px;border:1px solid #333;">
+<div id="homeScreen"></div>
 
-<input id="recvCode" placeholder="Enter 6-digit code" /><br>
-<button onclick="recvMessage()">Receive Message</button>
+<div id="taskbar">
+    <div id="taskbarCenter">
+        </div>
+    <div id="taskbarClock">
+        <span id="currentTime"></span>
+        <span id="currentDate"></span>
+    </div>
+</div>
 
-<div id="result"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.2.0/firebase-auth.js";
 
-<script>
-const BASE = "https://sad-pig-57.kannu-jaat.deno.net"; // 👈 yahan tera URL hai
+const firebaseConfig = {
+  apiKey: "AIzaSyB6S2-rkj9UHhBpAGARVNuXEibg9NsvOhA",
+  authDomain: "kk-mixing.firebaseapp.com",
+  projectId: "kk-mixing",
+  storageBucket: "kk-mixing.firebasestorage.app",
+  messagingSenderId: "296842598114",
+  appId: "1:296842598114:web:3e934bf51ebc2b179eb0bb",
+  measurementId: "G-C3HY42YLZP"
+};
 
-async function sendMessage() {
-  const msg = document.getElementById("sendText").value.trim();
-  if (!msg) return alert("Please type a message first!");
-  const res = await fetch(`${BASE}/send`, { method: "POST", body: msg });
-  const code = await res.text();
-  document.getElementById("result").innerHTML = `✅ Share this code: <b>${code}</b>`;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+
+// --- TASKBAR CLOCK LOGIC ---
+function updateClock() {
+    const now = new Date();
+    
+    // Time (HH:MM:SS)
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('currentTime').innerText = `${hours}:${minutes}:${seconds}`;
+
+    // Date (DD/MM/YYYY)
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const year = now.getFullYear();
+    document.getElementById('currentDate').innerText = `${day}/${month}/${year}`;
 }
 
-async function recvMessage() {
-  const code = document.getElementById("recvCode").value.trim();
-  if (!code) return alert("Enter your code!");
-  const res = await fetch(`${BASE}/recv?code=${code}`);
-  const text = await res.text();
-  document.getElementById("result").innerHTML = text === "Not found"
-    ? "❌ Message expired or wrong code"
-    : `📨 Received: <b>${text}</b>`;
+// Start the clock and update every second
+setInterval(updateClock, 1000);
+updateClock(); // Initial call
+// -----------------------------
+
+
+// --- CUSTOM MODAL LOGIC ---
+function showCustomConfirmation(message) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('customModal');
+        const msgElement = document.getElementById('modalMessage');
+        const yesButton = document.getElementById('modalYes');
+        const noButton = document.getElementById('modalNo');
+
+        msgElement.innerText = message;
+        modal.style.display = 'flex';
+
+        const handleYes = () => {
+            modal.style.display = 'none';
+            yesButton.removeEventListener('click', handleYes);
+            noButton.removeEventListener('click', handleNo);
+            resolve(true);
+        };
+
+        const handleNo = () => {
+            modal.style.display = 'none';
+            yesButton.removeEventListener('click', handleYes);
+            noButton.removeEventListener('click', handleNo);
+            resolve(false);
+        };
+
+        yesButton.addEventListener('click', handleYes);
+        noButton.addEventListener('click', handleNo);
+    });
 }
+// ----------------------------
+
+
+// LOGIN FUNCTION
+window.login = function () {
+  let email = document.getElementById("email").value;
+  let pass = document.getElementById("password").value;
+
+  signInWithEmailAndPassword(auth, email, pass)
+    .then(() => {
+      document.getElementById("loginScreen").style.display = "none";
+      loadApps();
+    })
+    .catch(err => {
+      document.getElementById("loginMsg").innerText = err.message;
+    });
+};
+
+
+// RANDOM ICON ARRAY
+const randomIcons = [
+    "https://img.icons8.com/color/50/google-docs.png",
+    "https://img.icons8.com/color/50/settings--v1.png", 
+    "https://img.icons8.com/color/50/internet-explorer.png", 
+    "https://img.icons8.com/fluency/50/developer-mode.png", 
+    "https://img.icons8.com/color/50/music-folder.png", 
+    "https://img.icons8.com/color/50/calendar--v1.png"
+];
+
+let iconIndex = 0;
+
+
+// LOAD APPS FROM GIST
+async function loadApps() {
+  let gistUrl =
+    "https://gist.githubusercontent.com/kannu-jaat/6d1681555372db2699af816e3d217db8/raw/adminData.json";
+
+  let apps = await fetch(gistUrl).then(r => r.json());
+
+  let home = document.getElementById("homeScreen");
+  home.style.display = "block";
+
+  apps.forEach(gistApp => {
+    let appTitle = gistApp.name || "Unknown App";
+    
+    let appIcon = randomIcons[iconIndex % randomIcons.length];
+    iconIndex++;
+
+    const appData = {
+        title: appTitle,
+        url: gistApp.url,
+        icon: appIcon
+    };
+
+    let div = document.createElement("div");
+    div.className = "appIcon";
+    div.innerHTML = `
+      <img src="${appData.icon}">
+      <div>${appData.title}</div>
+    `;
+    div.onclick = () => createWindow(appData);
+    home.appendChild(div);
+  });
+}
+
+// WINDOW MANAGEMENT
+let zIndex = 50;
+
+function createWindow(app) {
+  let win = document.createElement("div");
+  win.className = "window";
+  win.style.top = "100px";
+  win.style.left = "120px";
+  win.style.zIndex = ++zIndex;
+
+  win.innerHTML = `
+    <div class="windowHeader">
+      <span>${app.title}</span>
+      <div class="controls">
+        <button class="refresh">↻</button>
+        <button class="min">—</button>
+        <button class="max">□</button>
+        <button class="close">✖</button>
+      </div>
+    </div>
+    <iframe src="${app.url}"></iframe>
+  `;
+
+  document.body.appendChild(win);
+  enableDrag(win);
+  connectButtons(win);
+  addTaskbarIcon(win, app);
+  
+  // Window पर क्लिक करने पर उसे foreground में लाएं
+  win.addEventListener('mousedown', () => {
+    win.style.zIndex = ++zIndex;
+  });
+}
+
+// CONTROL BUTTONS (Custom Confirmation Logic)
+function connectButtons(win) {
+  let iframe = win.querySelector("iframe");
+  const appName = win.querySelector('.windowHeader span').innerText;
+
+  // REFRESH BUTTON WITH CUSTOM CONFIRMATION
+  win.querySelector(".refresh").onclick = async () => {
+      const confirmed = await showCustomConfirmation(`Are you sure you want to refresh "${appName}"?`);
+      if (confirmed) {
+          iframe.src = iframe.src;
+      }
+  };
+
+  win.querySelector(".min").onclick = () => {
+    win.style.display = "none";
+    win.style.zIndex = ++zIndex; 
+  };
+
+  win.querySelector(".max").onclick = () => {
+    if (win.classList.contains("maximized")) {
+      win.classList.remove("maximized");
+      win.style.width = "550px";
+      win.style.height = "380px";
+      win.style.zIndex = ++zIndex; 
+    } else {
+      win.classList.add("maximized");
+      win.style.top = "0";
+      win.style.left = "0";
+      win.style.height = `calc(100vh - 48px)`; 
+      win.style.width = "100vw";
+      win.style.zIndex = ++zIndex; 
+    }
+  };
+
+  // CLOSE BUTTON WITH CUSTOM CONFIRMATION
+  win.querySelector(".close").onclick = async () => {
+      const confirmed = await showCustomConfirmation(`Do you want to close "${appName}"?`);
+      if (confirmed) {
+          if (win.taskbarIcon) {
+            win.taskbarIcon.remove();
+          }
+          win.remove();
+      }
+  };
+}
+
+
+// DRAG (Fixed for z-index and mouse events)
+function enableDrag(win) {
+  let head = win.querySelector(".windowHeader");
+  let offsetX, offsetY;
+
+  // अब ड्रैग इवेंट विंडो हेडर पर ही है, जो सही है।
+  head.addEventListener("mousedown", (e) => {
+    win.style.zIndex = ++zIndex;
+    offsetX = e.clientX - win.offsetLeft;
+    offsetY = e.clientY - win.offsetTop;
+
+    function move(e) {
+      win.style.left = e.clientX - offsetX + "px";
+      win.style.top = e.clientY - offsetY + "px";
+    }
+
+    document.addEventListener("mousemove", move);
+
+    document.addEventListener("mouseup", () => {
+      document.removeEventListener("mousemove", move);
+    }, { once: true });
+  });
+}
+
+
+// TASKBAR
+function addTaskbarIcon(win, app) {
+  let barCenter = document.getElementById("taskbarCenter");
+
+  let icon = document.createElement("div");
+  icon.className = "taskIcon";
+  icon.innerHTML = `<img src="${app.icon}"><span>${app.title}</span>`;
+
+  icon.onclick = () => {
+    // अगर विंडो छिपी है, तो दिखाओ (Minimize से Restore)
+    if (win.style.display === "none") {
+        win.style.display = "block";
+    }
+    win.style.zIndex = ++zIndex;
+  };
+
+  barCenter.appendChild(icon);
+  
+  win.taskbarIcon = icon; 
+}
+
 </script>
 
 </body>
